@@ -30,8 +30,6 @@ app.get('*', (_, response) => {
     response.status(404).send('Page not found');
 })
 
-//add conditionals to the form so that its only seen if received
-
 app.post('/submit-contact-form', async (request, response) => {
     console.log(request.body)
 
