@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const app = express();
 const nodemailer = require('nodemailer');
 const cors = require('cors');
@@ -29,6 +31,19 @@ app.get('/', (_, response) => {
 app.get('*', (_, response) => {
     response.status(404).send('Page not found');
 })
+
+app.get('/video', (req, res) => {
+    const videoPath = path.join(__dirname, 'assets', 'lfHeaderVid.mp4');
+
+    if (fs.existsSync(videoPath)) {
+        const videoStream = fs.createReadStream(videoPath);
+        res.setHeader('Content-Type', 'video/mp4');
+        videoStream.pipe(res);
+    }
+    else {
+        res.status(404).send('Video file not found');
+    }
+});
 
 app.post('/submit-contact-form', async (request, response) => {
     console.log(request.body)
