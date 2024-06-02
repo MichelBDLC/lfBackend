@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
 const app = express();
 const nodemailer = require('nodemailer');
 const cors = require('cors');
@@ -11,7 +10,7 @@ const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
     },
-    filename: function (req, file, cb) {
+    filename: function (_, file, cb) {
         cb(null, file.originalname);
     }
 });
@@ -32,18 +31,9 @@ app.get('*', (_, response) => {
     response.status(404).send('Page not found');
 })
 
-app.get('/video', (req, res) => {
-    const videoPath = path.join(__dirname, 'assets', 'lfHeaderVid.mp4');
-
-    if (fs.existsSync(videoPath)) {
-        const videoStream = fs.createReadStream(videoPath);
-        res.setHeader('Content-Type', 'video/mp4');
-        videoStream.pipe(res);
-    }
-    else {
-        res.status(404).send('Video file not found');
-    }
-});
+app.get('/headerVid', (_, res) => {
+    res.sendFile(path.join(__dirname, 'headerVid.mp4'));
+})
 
 app.post('/submit-contact-form', async (request, response) => {
     console.log(request.body)
@@ -74,8 +64,57 @@ app.post('/submit-contact-form', async (request, response) => {
         }
 
         await transporter.sendMail(mailOptions);
-
+        
+        console.log(response.status);
         response.status(200).json({message: 'Contact Message Submitted Succesfully'})
+    }
+    catch (error) {
+        console.error(error);
+        response.status(500).json({error: 'Internal Server Error'})
+    }
+})
+
+app.post('/submit-rentals-form', async (request, response) => {
+    console.log(request.body)
+
+    const {gameZone, bouncyThrills, concession, scenic, sport, addOns, name, email, phone, city, state, date, message} = request.body;
+
+    try {
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.zoho.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
+            },
+        })
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: 'contact@loveandfashion.nyc',
+            subject: 'New Rentals Game Day Package Form Submission',
+            html: `
+            <p>Name: ${name}</p>
+            <p>Email: ${email}</p>
+            <p>Phone Number: ${phone}</p>
+            <p>City: ${city}</p>
+            <p>State: ${state}</p>
+            <p>Date: ${date}</p>
+            <p>Message: ${message}</p>
+            <p>Game Zone: ${gameZone}</p>
+            <p>Bouncy Thrills: ${bouncyThrills}</p>
+            <p>Concession: ${concession}</p>
+            <p>Scenic: ${scenic}</p>
+            <p>Sport: ${sport}</p>
+            <p>Add-ons: ${addOns}</p>`,
+        }
+
+
+        await transporter.sendMail(mailOptions);
+        
+        console.log(response.status);
+        response.status(200).json({message: 'Message Submitted Succesfully'})
     }
     catch (error) {
         console.error(error);
